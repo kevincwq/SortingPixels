@@ -59,9 +59,9 @@ namespace SortingPixels.UnitTest
         }
 
         [TestMethod]
-        public void TestVeryBigInit()
+        public void TestOverflowInit()
         {
-            Assert.ThrowsException<OutOfMemoryException>(() => TestInitWithWidthAndHeight(100000, 100000));
+            Assert.ThrowsException<OverflowException>(() => TestInitWithWidthAndHeight(50000, 50000));
         }
     }
 }
