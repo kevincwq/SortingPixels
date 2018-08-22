@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -85,7 +86,41 @@ namespace SortingPixels.Models
             return BitmapImage.Create(Width, Height, dpix, dpiy, format, BitmapPalettes.WebPalette, buffer, stride);
         }
 
-
+        private void SortLineByHue(int j)
+        {
+            // use bucket sorting for each line
+            var bucket = new List<short>[HUE_RANGE];
+            for (short i = 0; i < Width; i++)
+            {
+                var index = j * stride + i * bytesPerPixel;
+                var hue = (short)GetHue(buffer[index], buffer[index + 1], buffer[index + 2]);
+                var list = bucket[hue];
+                if (list == null)
+                {
+                    list = new List<short>();
+                    bucket[hue] = list;
+                }
+                list.Add(i);
+            }
+            // reconstruct the sorted line
+            var line = new byte[Width * bytesPerPixel];
+            var pos = 0;
+            foreach (var list in bucket)
+            {
+                if (list != null)
+                {
+                    foreach (var li in list)
+                    {
+                        var index = j * stride + li * bytesPerPixel;
+                        line[pos++] = buffer[index];
+                        line[pos++] = buffer[index + 1];
+                        line[pos++] = buffer[index + 2];
+                    }
+                }
+            }
+            Array.Copy(line, 0, buffer, j * stride, line.Length);
+        }
+        
         public BitmapSource Randomize()
         {
             var random = new Random(Environment.TickCount);
@@ -95,41 +130,24 @@ namespace SortingPixels.Models
 
         public BitmapSource SortByHue()
         {
-            // process line by line
+            // process line by line and use less memory
             for (int j = 0; j < Height; j++)
             {
-                // use bucket sorting for each line
-                var bucket = new List<short>[HUE_RANGE];
-                for (short i = 0; i < Width; i++)
-                {
-                    var index = j * stride + i * bytesPerPixel;
-                    var hue = (short)GetHue(buffer[index], buffer[index + 1], buffer[index + 2]);
-                    var list = bucket[hue];
-                    if(list==null)
-                    {
-                        list = new List<short>();
-                        bucket[hue] = list;
-                    }
-                    list.Add(i);
-                }
-                // reconstruct the sorted line
-                var line = new byte[Width * bytesPerPixel];
-                var pos = 0;
-                foreach(var list in bucket)
-                {
-                    if (list != null)
-                    {
-                        foreach(var li in list)
-                        {
-                            var index = j * stride + li * bytesPerPixel;
-                            line[pos++] = buffer[index];
-                            line[pos++] = buffer[index+1];
-                            line[pos++] = buffer[index+2];
-                        }
-                    }
-                }
-                Array.Copy(line, 0, buffer, j * stride, line.Length);
+                SortLineByHue(j);
             }
+
+            return CreateBitmapSourceFromBuffer();
+        }
+
+
+        public BitmapSource SortByHueParallel()
+        {
+            // use parallel for all lines if the time-performance is more important than memory consumption
+            Parallel.For(0, Height, j =>
+            {
+                SortLineByHue(j);
+            });
+
             return CreateBitmapSourceFromBuffer();
         }
     }

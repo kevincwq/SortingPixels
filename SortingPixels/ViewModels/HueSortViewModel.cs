@@ -19,8 +19,8 @@ namespace SortingPixels.ViewModels
             isBusy = false;
         }
 
-        public double RenderWidth { private get; set; }
-        public double RenderHeight { private get; set; }
+        public double RenderWidth { get; set; }
+        public double RenderHeight { get; set; }
 
         public ImageSource Image { get => image; private set => SetProperty(ref image, value); }
 
@@ -59,7 +59,7 @@ namespace SortingPixels.ViewModels
                     {
                         isBusy = true;
                         Debug.WriteLine($"{RenderWidth} {RenderHeight}");
-                        Image = model.SortByHue();
+                        Image = model.SortByHueParallel();
                         GC.Collect();
                     }
                     finally
