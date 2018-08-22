@@ -83,7 +83,9 @@ namespace SortingPixels.Models
 
         private BitmapSource CreateBitmapSourceFromBuffer()
         {
-            return BitmapImage.Create(Width, Height, dpix, dpiy, format, BitmapPalettes.WebPalette, buffer, stride);
+            if (buffer.Length > 0)
+                return BitmapImage.Create(Width, Height, dpix, dpiy, format, BitmapPalettes.WebPalette, buffer, stride);
+            return null;
         }
 
         private void SortLineByHue(int j)
@@ -120,7 +122,7 @@ namespace SortingPixels.Models
             }
             Array.Copy(line, 0, buffer, j * stride, line.Length);
         }
-        
+
         public BitmapSource Randomize()
         {
             var random = new Random(Environment.TickCount);
